@@ -9,7 +9,6 @@ export const metadata: Metadata = {
 		template: "%s / X",
 	},
 	metadataBase: new URL(process.env.NEXT_PUBLIC_NEXT_URL!),
-	viewport: "black",
 	openGraph: {
 		title: {
 			default: "X",
