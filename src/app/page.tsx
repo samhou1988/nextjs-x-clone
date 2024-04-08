@@ -1,4 +1,4 @@
-// import CreateAnAccount from "@/components/sharing/CreateAnAccount";
+import CreateAnAccount from "@/components/sharing/CreateAnAccount";
 import { currentUser } from "@clerk/nextjs";
 import { redirect } from "next/navigation";
 import Image from "next/image";
@@ -72,7 +72,7 @@ export default async function Home() {
 							Join today.
 						</h3>
 					</div>
-					{/* <CreateAnAccount /> */}
+					<CreateAnAccount />
 				</div>
 			</section>
 		</main>
