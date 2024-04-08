@@ -1,18 +1,18 @@
-import { ReactNode } from "react";
-import { currentUser as clerkCurrentUser } from "@clerk/nextjs";
+import { getTweetsAction } from "@/actions/tweet.action";
 import { getUserAction, getUserByUsernameAction } from "@/actions/user.action";
-import { redirect } from "next/navigation";
 import NotFound from "@/components/sharing/404";
-import UserProfile from "@/components/profile/UserProfile";
-import Topbar from "@/components/profile/Topbar";
-import Tabs from "@/components/profile/Tabs";
-import ButtonCreatePostMobile from "@/components/sharing/ButtonCreatePostMobile";
-import { getTotalTweetsAction } from "@/actions/tweet.action";
+import Tweets from "@/components/cards/tweets/Tweets";
+import { currentUser as clerkCurrentUser } from "@clerk/nextjs";
+import { redirect } from "next/navigation";
+import PaginationButtons from "@/components/sharing/PaginationButtons";
+import { isValidPage } from "@/lib/utils";
 
 interface Props {
-	children: ReactNode;
 	params: {
 		username: string;
+	};
+	searchParams: {
+		page: string;
 	};
 }
 
@@ -27,19 +27,17 @@ export const generateMetadata = async ({ params }: Props) => {
 	}
 
 	return {
-		description: user.bio,
+		title: `${user.name} (${user.username})`,
 		openGraph: {
-			description: user.bio,
-			type: "profile",
-			images: [user.imageUrl],
-			siteName: "X (formerly Twitter)",
-			url: `${process.env.NEXT_PUBLIC_NEXT_URL}/${user.username}`,
+			title: `${user.name} (${user.username})`,
 		},
 	};
 };
 
-const Layout = async ({ children, params }: Props) => {
-	const username = params.username;
+const Page = async ({ params, searchParams }: Props) => {
+	const { username } = params;
+	const { page: qPage } = searchParams;
+	const page = isValidPage(qPage);
 
 	// currentUser()
 	const clerkUser = await clerkCurrentUser();
@@ -51,31 +49,25 @@ const Layout = async ({ children, params }: Props) => {
 	const user = await getUserByUsernameAction(username);
 	if (!user) return <NotFound />;
 
-	const [totalTweets, totalReplies, totalLikes] = await Promise.all([
-		getTotalTweetsAction({ userId: user.id, isProfile: true }),
-		getTotalTweetsAction({ userId: user.id, isProfile: true, isReplies: true }),
-		getTotalTweetsAction({ userId: user.id, isProfile: true, isLikes: true }),
-	]);
+	const tweets = await getTweetsAction({
+		userId: user.id,
+		isProfile: true,
+		page,
+	});
 
-	return (
+	return tweets?.data.length ? (
 		<>
-			<ButtonCreatePostMobile />
-			<Topbar
-				name={user.name}
-				username={user.username}
-				totalTweets={totalTweets ?? 0}
-				totalReplies={totalReplies ?? 0}
-				totalLikes={totalLikes ?? 0}
+			{tweets?.data.map((tweet) => (
+				<Tweets key={tweet.id} tweet={tweet} userId={user.id} />
+			))}
+
+			<PaginationButtons
+				currentPage={page}
+				currentPath={`/${user.username}`}
+				hasNext={tweets.hasNext}
 			/>
-			<UserProfile
-				isMyProfile={currentUser.id === user.id}
-				user={user}
-				currentUser={{ id: currentUser.id, username: currentUser.username }}
-			/>
-			<Tabs username={user.username} />
-			{children}
 		</>
-	);
+	) : null;
 };
 
-export default Layout;
+export default Page;
