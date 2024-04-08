@@ -3,6 +3,8 @@ const nextConfig = {
   images: {
     remotePatterns: [{
       hostname: 'img.clerk.com',
+    }, {
+      hostname: 'res.cloudinary.com',
     }],
   }
 };
